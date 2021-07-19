@@ -1,0 +1,18 @@
+{
+    "actions": [
+      {
+        "type": "HTTPRequestAction",
+        "name": "location",
+        "options": {
+          "url": "http://free.ipwhois.io/json/"
+        }
+      },
+      {
+        "type": "PrintAction",
+        "name": "print",
+        "options": {
+          "message": "{{location.city}} is the capital of {{location.country}}."
+        }
+      }
+    ]
+}

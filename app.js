@@ -4,11 +4,16 @@ var _ = require("lodash");
 
 let argv = yargs.argv;
 let story = argv.story;
-var parsedJSON = require(`./${story}`);
-var actions = parsedJSON.actions;
 var resolvedString;
 
-actionStory();
+if (story !== undefined) {
+  var parsedJSON = require(`./${story}`);
+  var actions = parsedJSON.actions;
+  actionStory();
+} else {
+  process.exit(1);
+}
+
 
 async function actionStory() {
     if (actions) {
@@ -53,14 +58,6 @@ async function actionStory() {
       }
 }
 
-// _.renameKey = function (obj, key, newKey) {
-//   if (_.includes(_.keys(obj), key)) {
-//     obj[newKey] = _.clone(obj[key], true);
-//     delete obj[key];
-//   }
-//   return obj;
-// };
-
 function resolveString(str, obj) {
   var placeholders = [], // an array to collect the content between brackets
   rxp = /{{(.*?)}}/g;
@@ -82,4 +79,9 @@ function resolveString(str, obj) {
   }
   return str;
 }
+
+
+module.exports = actionStory;
+module.exports = resolveString;
+
 
