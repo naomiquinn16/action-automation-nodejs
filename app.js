@@ -1,80 +1,85 @@
-const yargs = require('yargs');
-const axios = require('axios').default;
-var _ = require('lodash');
+const yargs = require("yargs");
+const axios = require("axios").default;
+var _ = require("lodash");
 
-let argv = yargs.argv
+let argv = yargs.argv;
 let story = argv.story;
 var parsedJSON = require(`./${story}`);
 var actions = parsedJSON.actions;
+var resolvedString;
 
-// Step 1
-if (actions) {
-    if (actions[0].type === 'HTTPRequestAction') {
-        let url = `${actions[0].options.url}`;
-        axios.get(url, {})
-        .then((response) => {
-            locationData = renameKey(response, 'data', `${actions[0].name}`)
-            getSunset(locationData);
-        })
-        .catch(err => {
-            console.log(err);
-        })
-    }
-}
-else {
-    console.log('Json not found')
-}
+actionStory();
 
-const getSunset = (locationData) => {
-    let url = `${actions[1].options.url}`
-    var placeholders = [], // an array to collect the content between brackets
-    rxp = /{{(.*?)}}/g,
-    curMatch;
-    replaceWith = [locationData.location.latitude, locationData.location.longitude];
+async function actionStory() {
+    if (actions) {
+        let actionResponse = {};
 
-    while(curMatch = rxp.exec(url)) {
-        placeholders.push( curMatch[1] );
-    }
+        for (var i = 0; i < actions.length; i++) {
+          if (actions[i].type === "HTTPRequestAction") {
+            let str = `${actions[i].options.url}`;
+            const name = actions[i].name;
+            const rxp = /{{(.*?)}}/g;
 
-    for(var i = 0; i < placeholders.length; i++) {
-        url = url.replace(new RegExp('{{' + placeholders[i] + '}}', 'gi'), replaceWith[i]);
-    }
+            if (rxp.test(str)) {
+              this.resolvedString = resolveString(str, actionResponse);
+              await axios
+              .get(this.resolvedString, {})
+              .then((response) => {
+                actionResponse[name] = response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+            } else {
+              await axios
+              .get(str, {})
+              .then((response) => {
+                actionResponse[name] = response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+              }
+          }
 
-    axios.get(url, {
-
-    })
-    .then((response) => {
-        sunsetData = renameKey(response, 'data', 'sunset')
-        getSentence(locationData, sunsetData);
-    })
-    .catch(err => {
-        console.log(err);
-    })
-};
-
-getSentence = (locationData, sunsetData) => {
-    let message = `${actions[2].options.message}`;
-    var placeholders = [], // an array to collect the content between brackets
-    rxp = /{{(.*?)}}/g,
-    curMatch;
-    replaceWith = [locationData.location.city, locationData.location.country, sunsetData.sunset.results.sunset];
-
-    while(curMatch = rxp.exec(message)) {
-        placeholders.push( curMatch[1] );
-    }
-
-    for(var i = 0; i < placeholders.length; i++) {
-        message = message.replace(new RegExp('{{' + placeholders[i] + '}}', 'gi'), replaceWith[i]);
-    }
-
-    console.log(message);
+          if (actions[i].type === "PrintAction") {
+            let str = `${actions[i].options.message}`;
+            this.resolvedString = resolveString(str, actionResponse);
+            console.log(this.resolvedString);
+          }
+        }
+      } else {
+        console.log("Json not found");
+      }
 }
 
+// _.renameKey = function (obj, key, newKey) {
+//   if (_.includes(_.keys(obj), key)) {
+//     obj[newKey] = _.clone(obj[key], true);
+//     delete obj[key];
+//   }
+//   return obj;
+// };
 
-renameKey = function(obj, key, newKey) {
-    if(_.includes(_.keys(obj), key)) {
-      obj[newKey] = _.clone(obj[key], true);
-      delete obj[key];
-    }
-    return obj;
+function resolveString(str, obj) {
+  var placeholders = [], // an array to collect the content between brackets
+  rxp = /{{(.*?)}}/g;
+  var curMatch;
+
+  while ((curMatch = rxp.exec(str))) {
+    placeholders.push(curMatch[1]);
+  }
+
+  replaceWith = [];
+
+  for (var i = 0; i < placeholders.length; i++) {
+    var value = _.get(obj, placeholders[i]);
+    replaceWith.push(value);
+    str = str.replace(
+      new RegExp("{{" + placeholders[i] + "}}", "gi"),
+      replaceWith[i]
+    );
+  }
+  return str;
 }
+
