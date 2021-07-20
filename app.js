@@ -70,7 +70,7 @@ function resolveString(str, obj) {
   replaceWith = [];
 
   for (var i = 0; i < placeholders.length; i++) {
-    var value = _.get(obj, placeholders[i]);
+    var value = _.get(obj, placeholders[i], '');
     replaceWith.push(value);
     str = str.replace(
       new RegExp("{{" + placeholders[i] + "}}", "gi"),
